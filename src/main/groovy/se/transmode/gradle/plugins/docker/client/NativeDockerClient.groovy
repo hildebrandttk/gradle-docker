@@ -28,26 +28,26 @@ class NativeDockerClient implements DockerClient {
     }
 
     @Override
-    String buildImage(File buildDir, String tag) {
+    void buildImage(File buildDir, String tag) {
         Preconditions.checkArgument(tag as Boolean,  "Image tag can not be empty or null.")
         def cmdLine = "${binary} build -t ${tag} ${buildDir}"
-        return executeAndWait(cmdLine)
+        executeAndWait(cmdLine)
     }
 
     @Override
-    String pushImage(String tag) {
+    void pushImage(String tag) {
         Preconditions.checkArgument(tag as Boolean,  "Image tag can not be empty or null.")
         def cmdLine = "${binary} push ${tag}"
-        return executeAndWait(cmdLine)
+        executeAndWait(cmdLine)
     }
 
-    private static String executeAndWait(String cmdLine) {
+    private static void executeAndWait(String cmdLine) {
         def process = cmdLine.execute()
+        process.consumeProcessOutput(System.out as OutputStream, System.err)
         process.waitFor()
         if (process.exitValue()) {
             throw new GradleException("Docker execution failed\nCommand line [${cmdLine}] returned:\n${process.err.text}")
         }
-        return process.in.text
     }
 
 }

@@ -37,28 +37,28 @@ public class JavaDockerClient extends com.github.dockerjava.client.DockerClient 
     }
 
     @Override
-    public String buildImage(File buildDir, String tag) {
+    public void buildImage(File buildDir, String tag) {
         Preconditions.checkNotNull(tag, "Image tag can not be null.");
         Preconditions.checkArgument(!tag.isEmpty(),  "Image tag can not be empty.");
         ClientResponse response = buildImageCmd(buildDir).withTag(tag).exec();
-        return checkResponse(response);
+        checkAndPrintResponse(response);
     }
 
     @Override
-    public String pushImage(String tag) {
+    public void pushImage(String tag) {
         Preconditions.checkNotNull(tag, "Image tag can not be null.");
         Preconditions.checkArgument(!tag.isEmpty(),  "Image tag can not be empty.");
         ClientResponse response = pushImageCmd(tag).exec();
-        return checkResponse(response);
+        checkAndPrintResponse(response);
     }
 
-    private static String checkResponse(ClientResponse response) {
+    private static void checkAndPrintResponse(ClientResponse response) {
         String msg = response.getEntity(String.class);
         if (response.getStatusInfo() != ClientResponse.Status.OK) {
             throw new GradleException(
                     "Docker API error: Failed to build Image:\n"+msg);
         }
-        return msg;
+        System.out.println(msg);
     }
 
     public static JavaDockerClient create(String url, String user, String password, String email) {
