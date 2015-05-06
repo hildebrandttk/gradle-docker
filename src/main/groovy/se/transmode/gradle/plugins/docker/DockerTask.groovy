@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 package se.transmode.gradle.plugins.docker
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.Files
 
@@ -53,17 +54,20 @@ class DockerTask extends DefaultTask {
      * Path to external Dockerfile
      */
     File dockerfile
+
     public void setDockerfile(String path) {
         setDockerfile(project.file(path))
     }
+
     public void setDockerfile(File dockerfile) {
         this.dockerfile = dockerfile
     }
 
     /**
      * Name of the base docker image
-    */
+     */
     String baseImage
+
     public String getBaseImage() {
         return determineBaseImage()
     }
@@ -78,7 +82,8 @@ class DockerTask extends DefaultTask {
      * @return Name of base docker image
      */
     private String determineBaseImage() {
-        def defaultImage = project.hasProperty('targetCompatibility') ? JavaBaseImage.imageFor(project.targetCompatibility).imageName : DEFAULT_IMAGE
+        def defaultImage = project.hasProperty('targetCompatibility') ?
+                JavaBaseImage.imageFor(project.targetCompatibility).imageName : DEFAULT_IMAGE
         return baseImage ?: (project[DockerPlugin.EXTENSION_NAME].baseImage ?: defaultImage)
     }
 
@@ -88,7 +93,7 @@ class DockerTask extends DefaultTask {
     File stageDir
     // Tasks necessary to setup the stage before building an image
     def stageBacklog
-    
+
     // Should we use Docker's remote API instead of the docker executable
     Boolean useApi
     // URL of the remote Docker host (default: localhost)
@@ -105,11 +110,11 @@ class DockerTask extends DefaultTask {
         stageDir = new File(project.buildDir, "docker")
     }
 
-    void addFile(String source, String destination='/') {
+    void addFile(String source, String destination = '/') {
         addFile(project.file(source), destination)
     }
 
-    void addFile(File source, String destination='/') {
+    void addFile(File source, String destination = '/') {
         def target = stageDir
         if (source.isDirectory()) {
             target = new File(stageDir, source.name)
@@ -124,7 +129,7 @@ class DockerTask extends DefaultTask {
     }
 
     void addFile(Closure copySpec) {
-        final tarFile = new File(stageDir, "add_${instructions.size()+1}.tar")
+        final tarFile = new File(stageDir, "add_${instructions.size() + 1}.tar")
         stageBacklog.add { ->
             createTarArchive(tarFile, copySpec)
         }
@@ -133,21 +138,27 @@ class DockerTask extends DefaultTask {
 
     void createTarArchive(File tarFile, Closure copySpec) {
         final tmpDir = Files.createTempDir()
-        logger.info("Creating tar archive {} from {}", tarFile, tmpDir)
-        /* copy all files to temporary directory */
-        project.copy {
-            with {
-                into('/') {
-                    with copySpec
+        try {
+
+            logger.info("Creating tar archive {} from {}", tarFile, tmpDir)
+            /* copy all files to temporary directory */
+            project.copy {
+                with {
+                    into('/') {
+                        with copySpec
+                    }
                 }
+                into tmpDir
             }
-            into tmpDir
+            /* create tar archive */
+            new AntBuilder().tar(
+                    destfile: tarFile,
+                    basedir: tmpDir
+            )
+        } finally {
+            if (!tmpDir.deleteDir())
+                println "tmpDir $tmpDir not deleted"
         }
-        /* create tar archive */
-        new AntBuilder().tar(
-                destfile: tarFile,
-                basedir: tmpDir
-        )
     }
 
     void workingDir(String wd) {
@@ -207,7 +218,7 @@ class DockerTask extends DefaultTask {
             dir.mkdirs()
         return dir
     }
-    
+
     @VisibleForTesting
     protected void setupStageDir() {
         logger.info('Setting up staging directory.')
@@ -246,7 +257,6 @@ class DockerTask extends DefaultTask {
                 client.pushImage(tag)
             }
         }
-
     }
 
     private String getImageTag() {
@@ -269,16 +279,15 @@ class DockerTask extends DefaultTask {
 
     private String appendImageTagVersion(String tag) {
         def version = tagVersion ?: project.version
-        if(version == 'unspecified') {
+        if (version == 'unspecified') {
             version = 'latest'
         }
         return "${tag}:${version}"
-
     }
 
     private DockerClient getClient() {
         DockerClient client
-        if(getUseApi()) {
+        if (getUseApi()) {
             logger.info("Using the Docker remote API.")
             client = JavaDockerClient.create(
                     getHostUrl(),
