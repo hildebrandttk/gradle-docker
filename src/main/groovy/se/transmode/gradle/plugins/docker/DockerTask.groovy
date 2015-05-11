@@ -292,8 +292,7 @@ class DockerTask extends DefaultTask {
         }
         tagVersions[0] = "${tag}:${version}"
         for (int i = 1; i < tagVersions.length; i++) {
-            tagVersions[i] = additionalTagVersions.get(i-1);
-
+            tagVersions[i] = "${tag}:${additionalTagVersions.get(i-1)}"
         }
         return tagVersions
     }
