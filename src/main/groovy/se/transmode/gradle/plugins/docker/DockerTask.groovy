@@ -43,6 +43,8 @@ class DockerTask extends DefaultTask {
     String tag
     // Which version to use along with the tag (default: latest)
     String tagVersion
+    //additional tag versions date, build-number, ...
+    List<String> additionalTagVersions = new ArrayList<>()
     // Whether or not to execute docker to build the image (default: false)
     Boolean dryRun
     // Whether or not to push the image into the registry (default: false)
@@ -185,6 +187,10 @@ class DockerTask extends DefaultTask {
         tagVersion = version;
     }
 
+    void additionalTagVersion(String version) {
+        additionalTagVersions.add(version);
+    }
+
     void setTagVersionToLatest() {
         tagVersion = 'latest';
     }
@@ -247,22 +253,23 @@ class DockerTask extends DefaultTask {
     void build() {
         setupStageDir()
         buildDockerfile().writeToFile(new File(stageDir, 'Dockerfile'))
-        tag = getImageTag()
-        logger.info('Determining image tag: {}', tag)
+        String[] tags = getImageTags()
+        logger.info('Determining image tags: {}', tag)
 
         if (!dryRun) {
-            DockerClient client = getClient()
-            client.buildImage(stageDir, tag)
-            if (push) {
-                client.pushImage(tag)
+            for (String tag : tags) {
+                DockerClient client = getClient()
+                client.buildImage(stageDir, tag)
+                if (push) {
+                    client.pushImage(tag)
+                }
             }
         }
     }
 
-    private String getImageTag() {
-        String tag
-        tag = this.tag ?: getDefaultImageTag()
-        return appendImageTagVersion(tag)
+    private String[] getImageTags() {
+        String tag = this.tag ?: getDefaultImageTag()
+        return appendImageTagVersions(tag)
     }
 
     private String getDefaultImageTag() {
@@ -277,12 +284,18 @@ class DockerTask extends DefaultTask {
         return tag
     }
 
-    private String appendImageTagVersion(String tag) {
+    private String[] appendImageTagVersions(String tag) {
+        String[] tagVersions = new String[additionalTagVersions.size()+1]
         def version = tagVersion ?: project.version
         if (version == 'unspecified') {
             version = 'latest'
         }
-        return "${tag}:${version}"
+        tagVersions[0] = "${tag}:${version}"
+        for (int i = 1; i < tagVersions.length; i++) {
+            tagVersions[i] = additionalTagVersions.get(i-1);
+
+        }
+        return tagVersions
     }
 
     private DockerClient getClient() {
