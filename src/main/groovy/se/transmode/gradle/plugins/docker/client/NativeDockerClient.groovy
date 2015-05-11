@@ -17,35 +17,42 @@ package se.transmode.gradle.plugins.docker.client
 
 import com.google.common.base.Preconditions
 import org.gradle.api.GradleException
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class NativeDockerClient implements DockerClient {
+
+    private static final Logger LOG = LoggerFactory.getLogger('NativeDockerClient')
 
     private final String binary;
 
     NativeDockerClient(String binary) {
-        Preconditions.checkArgument(binary as Boolean,  "Docker binary can not be empty or null.")
+        Preconditions.checkArgument(binary as Boolean, "Docker binary can not be empty or null.")
         this.binary = binary
     }
 
     @Override
     void buildImage(File buildDir, String tag) {
-        Preconditions.checkArgument(tag as Boolean,  "Image tag can not be empty or null.")
+        Preconditions.checkArgument(tag as Boolean, "Image tag can not be empty or null.")
         executeAndWait(binary, 'build', '-t', tag, buildDir.toString())
     }
 
     @Override
     void pushImage(String tag) {
-        Preconditions.checkArgument(tag as Boolean,  "Image tag can not be empty or null.")
+        Preconditions.checkArgument(tag as Boolean, "Image tag can not be empty or null.")
         executeAndWait(binary, 'push', tag)
     }
 
     private static void executeAndWait(String... commands) {
         def process = commands.execute()
-        process.consumeProcessOutput(System.out as OutputStream, System.err)
+        process.consumeProcessOutput(
+                new LoggingAppendable(LOG, "info"),
+                new LoggingAppendable(LOG, "error")
+        )
         process.waitFor()
         if (process.exitValue()) {
-            throw new GradleException("Docker execution failed\nCommand line [${commands}] returned:\n${process.err.text}")
+            throw new GradleException(
+                    "Docker execution failed\nCommand line [${commands}] returned:\n${process.err.text}")
         }
     }
-
 }
