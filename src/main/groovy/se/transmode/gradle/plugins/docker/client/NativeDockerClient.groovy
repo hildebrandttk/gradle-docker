@@ -34,7 +34,7 @@ class NativeDockerClient implements DockerClient {
     @Override
     void buildImage(File buildDir, String tag) {
         Preconditions.checkArgument(tag as Boolean, "Image tag can not be empty or null.")
-        executeAndWait(binary, 'build', '-t', tag, buildDir.toString())
+        executeAndWait(binary, 'build', '--no-cache=true', '--force-rm=true', '-t', tag, buildDir.toString())
     }
 
     @Override
