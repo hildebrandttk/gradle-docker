@@ -43,6 +43,13 @@ class NativeDockerClient implements DockerClient {
         executeAndWait(binary, 'push', tag)
     }
 
+    @Override
+    void tagImage(String imageIdentifier, String newTag) {
+        Preconditions.checkArgument(imageIdentifier as Boolean, "Image identifier can not be empty or null.")
+        Preconditions.checkArgument(newTag as Boolean, "New image tag can not be empty or null.")
+        executeAndWait(binary, 'tag', '-f', imageIdentifier, newTag)
+    }
+
     private static void executeAndWait(String... commands) {
         def process = commands.execute()
         process.consumeProcessOutput(

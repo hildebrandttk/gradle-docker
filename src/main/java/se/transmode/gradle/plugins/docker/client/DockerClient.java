@@ -20,4 +20,6 @@ import java.io.File;
 public interface DockerClient {
     public void buildImage(File buildDir, String tag);
     public void pushImage(String tag);
+
+    public void tagImage(String imageIdentifier, String newTag);
 }

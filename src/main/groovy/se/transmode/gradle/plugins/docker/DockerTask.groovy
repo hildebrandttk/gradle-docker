@@ -159,7 +159,7 @@ class DockerTask extends DefaultTask {
             )
         } finally {
             if (!tmpDir.deleteDir())
-                println "tmpDir $tmpDir not deleted"
+                logger.error("tmpDir $tmpDir not deleted")
         }
     }
 
@@ -253,23 +253,30 @@ class DockerTask extends DefaultTask {
     void build() {
         setupStageDir()
         buildDockerfile().writeToFile(new File(stageDir, 'Dockerfile'))
-        String[] tags = getImageTags()
-        logger.info('Determining image tags: {}', tag)
-
+        String tag = getImageTag()
+        String tagWithVersion = appendImageTagVersion(tag)
+        logger.info("Building image ${tagWithVersion}")
         if (!dryRun) {
-            for (String tag : tags) {
-                DockerClient client = getClient()
-                client.buildImage(stageDir, tag)
-                if (push) {
-                    client.pushImage(tag)
+            List<String> tagsToPush = []
+            DockerClient client = getClient()
+            client.buildImage(stageDir, tagWithVersion)
+            tagsToPush.add(tagWithVersion)
+            for (String additionalTagVersion : additionalTagVersions) {
+                def additionalTagWithVersion = "${tag}:${additionalTagVersion}"
+                client.tagImage(tagWithVersion, additionalTagWithVersion)
+                tagsToPush.add(additionalTagWithVersion)
+            }
+            if (push) {
+                for (String tagToPush : tagsToPush) {
+                    client.pushImage(tagToPush)
+                    logger.info("Pushed image ${tagToPush}")
                 }
             }
         }
     }
 
-    private String[] getImageTags() {
-        String tag = this.tag ?: getDefaultImageTag()
-        return appendImageTagVersions(tag)
+    private String getImageTag() {
+        this.tag ?: getDefaultImageTag()
     }
 
     private String getDefaultImageTag() {
@@ -284,17 +291,12 @@ class DockerTask extends DefaultTask {
         return tag
     }
 
-    private String[] appendImageTagVersions(String tag) {
-        String[] tagVersions = new String[additionalTagVersions.size()+1]
+    private String appendImageTagVersion(String tag) {
         def version = tagVersion ?: project.version
         if (version == 'unspecified') {
             version = 'latest'
         }
-        tagVersions[0] = "${tag}:${version}"
-        for (int i = 1; i < tagVersions.length; i++) {
-            tagVersions[i] = "${tag}:${additionalTagVersions.get(i-1)}"
-        }
-        return tagVersions
+        "${tag}:${version}"
     }
 
     private DockerClient getClient() {

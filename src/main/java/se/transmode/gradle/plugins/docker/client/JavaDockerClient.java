@@ -52,6 +52,13 @@ public class JavaDockerClient extends com.github.dockerjava.client.DockerClient 
         checkAndPrintResponse(response);
     }
 
+    @Override
+    public void tagImage(String imageIdentifier, String newTag) {
+        Preconditions.checkArgument(imageIdentifier == null, "Image identifier can not be empty or null.");
+        Preconditions.checkArgument(newTag == null, "New image tag can not be empty or null.");
+        tagImageCmd(imageIdentifier, newTag.split("/")[0], newTag.split("/")[1]);
+    }
+
     private static void checkAndPrintResponse(ClientResponse response) {
         String msg = response.getEntity(String.class);
         if (response.getStatusInfo() != ClientResponse.Status.OK) {
