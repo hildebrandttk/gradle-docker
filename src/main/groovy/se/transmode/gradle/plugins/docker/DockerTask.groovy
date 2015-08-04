@@ -62,7 +62,7 @@ class DockerTask extends DefaultTask {
 
     /**
      * Name of the base docker image
-    */
+     */
     String baseImage
     public String getBaseImage() {
         return determineBaseImage()
@@ -88,7 +88,7 @@ class DockerTask extends DefaultTask {
     File stageDir
     // Tasks necessary to setup the stage before building an image
     def stageBacklog
-    
+
     // Should we use Docker's remote API instead of the docker executable
     Boolean useApi
     // URL of the remote Docker host (default: localhost)
@@ -207,7 +207,7 @@ class DockerTask extends DefaultTask {
             dir.mkdirs()
         return dir
     }
-    
+
     @VisibleForTesting
     protected void setupStageDir() {
         logger.info('Setting up staging directory.')
@@ -241,9 +241,9 @@ class DockerTask extends DefaultTask {
 
         if (!dryRun) {
             DockerClient client = getClient()
-            println client.buildImage(stageDir, tag)
+            client.buildImage(stageDir, tag)
             if (push) {
-                println client.pushImage(tag)
+                client.pushImage(tag)
             }
         }
 
