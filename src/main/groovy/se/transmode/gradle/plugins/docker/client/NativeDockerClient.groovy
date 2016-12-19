@@ -47,7 +47,7 @@ class NativeDockerClient implements DockerClient {
     void tagImage(String imageIdentifier, String newTag) {
         Preconditions.checkArgument(imageIdentifier as Boolean, "Image identifier can not be empty or null.")
         Preconditions.checkArgument(newTag as Boolean, "New image tag can not be empty or null.")
-        executeAndWait(binary, 'tag', '-f', imageIdentifier, newTag)
+        executeAndWait(binary, 'tag', imageIdentifier, newTag)
     }
 
     private static void executeAndWait(String... commands) {

@@ -138,6 +138,10 @@ class DockerTask extends DefaultTask {
         instructions.add("ADD ${tarFile.name} ${'/'}")
     }
 
+    void changeUser(String userName) {
+        instructions.add("USER ${userName}")
+    }
+
     void createTarArchive(File tarFile, Closure copySpec) {
         final tmpDir = Files.createTempDir()
         try {
