@@ -15,37 +15,44 @@
  */
 package se.transmode.gradle.plugins.docker
 
-import org.junit.Test
-import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.api.Project
-import static org.junit.Assert.*
-import static org.hamcrest.Matchers.*
+import org.gradle.testfixtures.ProjectBuilder
+import org.junit.Test
 
+import java.time.Duration
+
+import static org.hamcrest.Matchers.equalTo
+import static org.hamcrest.Matchers.is
+import static org.junit.Assert.assertThat
 
 class CreateDockerfileTest {
-    @Test
-    public void compareDockFile() {
-        Project project = ProjectBuilder.builder().build()
-        project.apply plugin: 'docker'
+  @Test
+  public void compareDockFile() {
+    Project project = ProjectBuilder.builder().build()
+    project.apply plugin: 'docker'
 
-        def task = project.task('docker', type: DockerTask)
+    def task = project.task('docker', type: DockerTask)
 
-        // don't actually execute docker, just build Dockerfile
-        task.dockerBinary = "/bin/true"
+    // don't actually execute docker, just build Dockerfile
+    task.dockerBinary = "/bin/true"
 
-        // example pulled from "http://docs.docker.io/en/latest/use/builder/#dockerfile-examples"
-        task.baseImage "ubuntu"
-        task.maintainer 'Guillaume J. Charmes "guillaume@dotcloud.com"'
+    // example pulled from "http://docs.docker.io/en/latest/use/builder/#dockerfile-examples"
+    task.baseImage "ubuntu"
+    task.maintainer 'Guillaume J. Charmes "guillaume@dotcloud.com"'
 
-        task.runCommand 'echo "deb http://archive.ubuntu.com/ubuntu precise main universe" > /etc/apt/sources.list'
-        task.runCommand "apt-get update"
+    task.runCommand 'echo "deb http://archive.ubuntu.com/ubuntu precise main universe" > /etc/apt/sources.list'
+    task.runCommand "apt-get update"
 
-        task.runCommand "apt-get install -y inotify-tools nginx apache2 openssh-server"
+    task.runCommand "apt-get install -y inotify-tools nginx apache2 openssh-server"
+    task.addHealthCheck "/healthCheck.sh"
+    task.addHealthCheck(Duration.ofSeconds(1), Duration.ofSeconds(5), "curl -f http://localhost/ || exit 1")
+    task.addHealthCheck(Duration.ofSeconds(1), Duration.ofMinutes(5), Duration.ofHours(1), 5,
+            "/bin/false")
 
-        def expectedDockerFile = this.getClass().getResource("nginx.Dockerfile").text.trim()
-        def actualDockerFile = task.buildDockerfile().instructions.join(System.getProperty('line.separator'))
+    def expectedDockerFile = this.getClass().getResource("nginx.Dockerfile").text.trim()
+    def actualDockerFile = task.buildDockerfile().instructions.join(System.getProperty('line.separator'))
 
-        assertThat actualDockerFile, is(equalTo(expectedDockerFile))
-    }
+    assertThat actualDockerFile, is(equalTo(expectedDockerFile))
+  }
 }
 

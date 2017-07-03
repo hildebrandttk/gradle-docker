@@ -15,18 +15,19 @@
  */
 package se.transmode.gradle.plugins.docker
 
-import com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting
 import com.google.common.io.Files
-
 import org.gradle.api.DefaultTask
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.tasks.TaskAction
-
 import se.transmode.gradle.plugins.docker.client.DockerClient
 import se.transmode.gradle.plugins.docker.client.JavaDockerClient
 import se.transmode.gradle.plugins.docker.client.NativeDockerClient
 import se.transmode.gradle.plugins.docker.image.Dockerfile
+
+import java.time.Duration
+import java.time.temporal.ChronoUnit
 
 class DockerTask extends DefaultTask {
 
@@ -187,7 +188,33 @@ class DockerTask extends DefaultTask {
         instructions.add("ENV ${key} ${value}")
     }
 
-    void setTagVersion(String version) {
+  void addHealthCheck(String cmd) {
+    addHealthCheck(null, null, null, null, cmd)
+  }
+
+  void addHealthCheck(Duration interval, Duration timeout, String cmd) {
+    addHealthCheck(interval, timeout, null, null, cmd)
+  }
+
+  void addHealthCheck(Duration interval, Duration timeout, Duration startPeriod, Integer retries, String cmd) {
+    def command = "HEALTHCHECK "
+    if (interval)
+      command += "--interval=${toString(interval)} "
+    if (timeout)
+      command += "--timeout=${toString(timeout)} "
+    if (startPeriod)
+      command += "--startPeriod=${toString(startPeriod)} "
+    if (retries)
+      command += "--retries=$retries "
+    command += "\\\n  CMD $cmd"
+    instructions.add(command)
+  }
+
+  String toString(Duration duration) {
+    return "${duration.get(ChronoUnit.SECONDS)}s"
+  }
+
+  void setTagVersion(String version) {
         tagVersion = version;
     }
 
