@@ -203,7 +203,7 @@ class DockerTask extends DefaultTask {
     if (timeout)
       command += "--timeout=${toString(timeout)} "
     if (startPeriod)
-      command += "--startPeriod=${toString(startPeriod)} "
+      command += "--start-period=${toString(startPeriod)} "
     if (retries)
       command += "--retries=$retries "
     command += "\\\n  CMD $cmd"

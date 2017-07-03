@@ -7,5 +7,5 @@ HEALTHCHECK \
   CMD /healthCheck.sh
 HEALTHCHECK --interval=1s --timeout=5s \
   CMD curl -f http://localhost/ || exit 1
-HEALTHCHECK --interval=1s --timeout=300s --startPeriod=3600s --retries=5 \
+HEALTHCHECK --interval=1s --timeout=300s --start-period=3600s --retries=5 \
   CMD /bin/false
